@@ -13,6 +13,7 @@ export default function CustomerList() {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -54,7 +55,7 @@ export default function CustomerList() {
 
   return (
     <div className="container">
-      <div className="flex items-center justify-between mb-4 mt-3">
+      <div className="flex items-center justify-between mb-3 mt-3">
         <h1 className="text-2xl font-bold text-gray-800">Hisab Book</h1>
         <button
           data-testid="add-customer-btn"
@@ -64,6 +65,14 @@ export default function CustomerList() {
           + Add Customer
         </button>
       </div>
+
+      <input
+        data-testid="customer-search"
+        className="border rounded px-3 py-1.5 text-sm w-full mb-3 bg-white"
+        placeholder="Search customers by name or phone..."
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+      />
 
       {showAdd && (
         <form
@@ -96,7 +105,11 @@ export default function CustomerList() {
       )}
 
       <div className="space-y-2">
-        {customers.map(c => (
+        {customers.filter(c =>
+          !search.trim() ||
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          (c.phone && c.phone.includes(search))
+        ).map(c => (
           <div key={c.id} data-testid={`customer-card-${c.id}`} className="bg-white border rounded p-3">
             {editId === c.id ? (
               <div className="flex gap-2 flex-wrap items-center">

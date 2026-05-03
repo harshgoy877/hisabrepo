@@ -50,7 +50,14 @@ Single-user hisab (accounting) maintaining software. Traditional ledger-book exp
 - ✅ 5-second auto-refresh/sync
 - ✅ Edit/delete all entry types inline
 
-## Test Results
+- ✅ Search bar on dashboard (filter customers by name/phone)
+- ✅ Search bar in Pages tab (filter by date)
+- ✅ Search bar in Summary tab (filter bills/items/money by name, date, note)
+- ✅ Search bar in Pending Bills tab (filter by bill# or date)
+- ✅ Search bar in Pending Prices tab (filter by item name)
+- ✅ Search bar in Price Memory tab (filter by item name)
+- ✅ Search bar in Settled tab (filter by date)
+- ✅ Search bar in Page Detail entries (filter by item name, note, amount, type)
 - Backend: 100% (30/30 passed)
 - Frontend: 95% - all core flows work
 

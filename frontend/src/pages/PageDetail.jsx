@@ -328,6 +328,7 @@ export default function PageDetail() {
   const [priceMap, setPriceMap] = useState({});
   const [editDate, setEditDate] = useState(false);
   const [dateVal, setDateVal] = useState("");
+  const [entrySearch, setEntrySearch] = useState("");
   const fileRef = useRef();
 
   const load = useCallback(async () => {
@@ -457,10 +458,29 @@ export default function PageDetail() {
 
       {/* Entries */}
       <div className="bg-white border rounded p-3 mb-3">
-        <div className="text-sm font-medium text-gray-700 mb-1">Entries</div>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-sm font-medium text-gray-700">Entries</span>
+          <input
+            data-testid="entry-search"
+            className="border rounded px-2 py-1 text-sm flex-1"
+            placeholder="Search entries..."
+            value={entrySearch}
+            onChange={e => setEntrySearch(e.target.value)}
+          />
+        </div>
         {entries.length === 0 && <div className="text-gray-400 text-sm py-3 text-center">No entries yet. Add below.</div>}
         <div>
-          {entries.map(e => (
+          {entries.filter(e => {
+            if (!entrySearch.trim()) return true;
+            const q = entrySearch.toLowerCase();
+            return (
+              (e.item_name && e.item_name.toLowerCase().includes(q)) ||
+              (e.note && e.note.toLowerCase().includes(q)) ||
+              (e.bill_no && String(e.bill_no).includes(q)) ||
+              (e.amount && String(e.amount).includes(q)) ||
+              e.type.includes(q)
+            );
+          }).map(e => (
             <EntryRow
               key={e.id}
               entry={e}

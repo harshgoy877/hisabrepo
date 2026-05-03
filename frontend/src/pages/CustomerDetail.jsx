@@ -30,6 +30,12 @@ export default function CustomerDetail() {
   const [newDate, setNewDate] = useState(today());
   const [fillAmounts, setFillAmounts] = useState({});
   const [fillPrices, setFillPrices] = useState({});
+  const [pageSearch, setPageSearch] = useState("");
+  const [summarySearch, setSummarySearch] = useState("");
+  const [pendingBillSearch, setPendingBillSearch] = useState("");
+  const [pendingPriceSearch, setPendingPriceSearch] = useState("");
+  const [priceMemSearch, setPriceMemSearch] = useState("");
+  const [settledSearch, setSettledSearch] = useState("");
 
   const LIMIT = 20;
 
@@ -218,6 +224,14 @@ export default function CustomerDetail() {
             )}
           </div>
 
+          <input
+            data-testid="page-search"
+            className="border rounded px-3 py-1.5 text-sm w-full mb-3 bg-white"
+            placeholder="Search pages by date..."
+            value={pageSearch}
+            onChange={e => setPageSearch(e.target.value)}
+          />
+
           {showAddPage && (
             <form onSubmit={addPage} className="bg-white border rounded p-3 mb-3 flex gap-2 items-center">
               <label className="text-sm text-gray-600">Date:</label>
@@ -236,7 +250,7 @@ export default function CustomerDetail() {
           {pages.length === 0 && <div className="text-gray-400 text-sm py-8 text-center">No pages yet.</div>}
 
           <div className="space-y-1.5">
-            {pages.map(p => (
+            {pages.filter(p => !pageSearch.trim() || fmtDate(p.date).toLowerCase().includes(pageSearch.toLowerCase()) || p.date.includes(pageSearch)).map(p => (
               <div key={p.id} data-testid={`page-card-${p.id}`} className="bg-white border rounded p-2.5 flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -276,15 +290,28 @@ export default function CustomerDetail() {
       {/* Summary Tab */}
       {tab === "summary" && (
         <div data-testid="summary-section">
+          <input
+            data-testid="summary-search"
+            className="border rounded px-3 py-1.5 text-sm w-full mb-3 bg-white"
+            placeholder="Search in summary (item name, bill no, note)..."
+            value={summarySearch}
+            onChange={e => setSummarySearch(e.target.value)}
+          />
           {!summary && <div className="text-gray-400 text-sm py-4 text-center">Loading summary...</div>}
-          {summary && (
+          {summary && (() => {
+            const q = summarySearch.toLowerCase();
+            const filtBills = summary.bills.filter(b => !q || String(b.bill_no).includes(q) || fmtDate(b.date).toLowerCase().includes(q));
+            const filtItems = summary.items.filter(it => !q || (it.item_name || "").toLowerCase().includes(q) || fmtDate(it.date).toLowerCase().includes(q));
+            const filtMoneyIn = summary.money_in.filter(m => !q || (m.note || "").toLowerCase().includes(q) || fmtDate(m.date).toLowerCase().includes(q));
+            const filtMoneyOut = summary.money_out.filter(m => !q || (m.note || "").toLowerCase().includes(q) || fmtDate(m.date).toLowerCase().includes(q));
+            return (
             <div className="space-y-4 text-sm">
               {/* Bills */}
-              {summary.bills.length > 0 && (
+              {filtBills.length > 0 && (
                 <div>
                   <div className="font-semibold text-gray-700 mb-1 text-base">Bills</div>
                   <div className="space-y-0.5">
-                    {summary.bills.map(b => (
+                    {filtBills.map(b => (
                       <div key={b.id} data-testid={`summary-bill-${b.id}`} className="flex gap-2">
                         <span className="text-gray-500 w-4 text-right">{b.bill_no}</span>
                         <span>—</span>
@@ -299,10 +326,10 @@ export default function CustomerDetail() {
               )}
 
               {/* Items grouped by date */}
-              {summary.items.length > 0 && (
+              {filtItems.length > 0 && (
                 <div>
                   <div className="font-semibold text-gray-700 mb-1 text-base">Items</div>
-                  {groupByDate(summary.items).map(([date, its]) => (
+                  {groupByDate(filtItems).map(([date, its]) => (
                     <div key={date} className="mb-2">
                       <div className="text-gray-400 text-xs mb-0.5">({fmtDate(date)})</div>
                       {its.map(it => (
@@ -318,11 +345,11 @@ export default function CustomerDetail() {
               )}
 
               {/* Money In */}
-              {summary.money_in.length > 0 && (
+              {filtMoneyIn.length > 0 && (
                 <div>
                   <div className="font-semibold text-gray-700 mb-1 text-base">Money In</div>
                   <div className="space-y-0.5">
-                    {summary.money_in.map(m => (
+                    {filtMoneyIn.map(m => (
                       <div key={m.id} data-testid={`summary-moneyin-${m.id}`} className="flex gap-2 flex-wrap">
                         <span className="text-green-700">{fmtAmt(m.amount)}</span>
                         <span className="text-gray-400">({fmtDate(m.date)})</span>
@@ -334,11 +361,11 @@ export default function CustomerDetail() {
               )}
 
               {/* Money Out */}
-              {summary.money_out.length > 0 && (
+              {filtMoneyOut.length > 0 && (
                 <div>
                   <div className="font-semibold text-gray-700 mb-1 text-base">Money Out</div>
                   <div className="space-y-0.5">
-                    {summary.money_out.map(m => (
+                    {filtMoneyOut.map(m => (
                       <div key={m.id} data-testid={`summary-moneyout-${m.id}`} className="flex gap-2 flex-wrap">
                         <span className="text-red-700">{fmtAmt(m.amount)}</span>
                         <span className="text-gray-400">({fmtDate(m.date)})</span>
@@ -349,21 +376,31 @@ export default function CustomerDetail() {
                 </div>
               )}
 
-              {summary.bills.length === 0 && summary.items.length === 0 && summary.money_in.length === 0 && summary.money_out.length === 0 && (
-                <div className="text-gray-400 py-4 text-center">No active entries yet.</div>
+              {filtBills.length === 0 && filtItems.length === 0 && filtMoneyIn.length === 0 && filtMoneyOut.length === 0 && (
+                <div className="text-gray-400 py-4 text-center">{summarySearch ? "No results for your search." : "No active entries yet."}</div>
               )}
             </div>
-          )}
+          );
+          })()}
         </div>
       )}
 
       {/* Pending Bills Tab */}
       {tab === "pending-bills" && (
         <div data-testid="pending-bills-section">
-          <div className="text-sm text-gray-500 mb-3">Bills without amount. Fill in to update the page.</div>
-          {pendingBills.length === 0 && <div className="text-gray-400 text-sm py-6 text-center">No pending bills.</div>}
+          <div className="text-sm text-gray-500 mb-2">Bills without amount. Fill in to update the page.</div>
+          <input
+            data-testid="pending-bills-search"
+            className="border rounded px-3 py-1.5 text-sm w-full mb-3 bg-white"
+            placeholder="Search by bill number or date..."
+            value={pendingBillSearch}
+            onChange={e => setPendingBillSearch(e.target.value)}
+          />
+          {pendingBills.filter(b => !pendingBillSearch.trim() || String(b.bill_no).includes(pendingBillSearch) || fmtDate(b.page_date).toLowerCase().includes(pendingBillSearch.toLowerCase())).length === 0 && (
+            <div className="text-gray-400 text-sm py-6 text-center">{pendingBillSearch ? "No results." : "No pending bills."}</div>
+          )}
           <div className="space-y-2">
-            {pendingBills.map(b => (
+            {pendingBills.filter(b => !pendingBillSearch.trim() || String(b.bill_no).includes(pendingBillSearch) || fmtDate(b.page_date).toLowerCase().includes(pendingBillSearch.toLowerCase())).map(b => (
               <div key={b.id} data-testid={`pending-bill-${b.id}`} className="bg-white border rounded p-2.5 flex items-center gap-2 flex-wrap">
                 <span className="text-gray-700 font-medium">Bill #{b.bill_no}</span>
                 <span className="text-gray-400 text-xs">({fmtDate(b.page_date)})</span>
@@ -393,10 +430,19 @@ export default function CustomerDetail() {
       {/* Pending Prices Tab */}
       {tab === "pending-prices" && (
         <div data-testid="pending-prices-section">
-          <div className="text-sm text-gray-500 mb-3">Items without price. Fill in to update the page and price memory.</div>
-          {pendingPrices.length === 0 && <div className="text-gray-400 text-sm py-6 text-center">No pending prices.</div>}
+          <div className="text-sm text-gray-500 mb-2">Items without price. Fill in to update the page and price memory.</div>
+          <input
+            data-testid="pending-prices-search"
+            className="border rounded px-3 py-1.5 text-sm w-full mb-3 bg-white"
+            placeholder="Search by item name..."
+            value={pendingPriceSearch}
+            onChange={e => setPendingPriceSearch(e.target.value)}
+          />
+          {pendingPrices.filter(it => !pendingPriceSearch.trim() || (it.item_name || "").toLowerCase().includes(pendingPriceSearch.toLowerCase())).length === 0 && (
+            <div className="text-gray-400 text-sm py-6 text-center">{pendingPriceSearch ? "No results." : "No pending prices."}</div>
+          )}
           <div className="space-y-2">
-            {pendingPrices.map(it => (
+            {pendingPrices.filter(it => !pendingPriceSearch.trim() || (it.item_name || "").toLowerCase().includes(pendingPriceSearch.toLowerCase())).map(it => (
               <div key={it.id} data-testid={`pending-price-${it.id}`} className="bg-white border rounded p-2.5 flex items-center gap-2 flex-wrap">
                 <span className="text-gray-700 font-medium">{it.item_name}</span>
                 {it.qty && <span className="text-gray-500 text-sm">Qty: {it.qty}</span>}
@@ -427,10 +473,19 @@ export default function CustomerDetail() {
       {/* Price Memory Tab */}
       {tab === "price-memory" && (
         <div data-testid="price-memory-section">
-          <div className="text-sm text-gray-500 mb-3">Remembered prices for {customer.name}. Used for autofill.</div>
-          {priceMemory.length === 0 && <div className="text-gray-400 text-sm py-6 text-center">No prices remembered yet.</div>}
+          <div className="text-sm text-gray-500 mb-2">Remembered prices for {customer.name}. Used for autofill.</div>
+          <input
+            data-testid="price-memory-search"
+            className="border rounded px-3 py-1.5 text-sm w-full mb-3 bg-white"
+            placeholder="Search item name..."
+            value={priceMemSearch}
+            onChange={e => setPriceMemSearch(e.target.value)}
+          />
+          {priceMemory.filter(ip => !priceMemSearch.trim() || ip.item_name.toLowerCase().includes(priceMemSearch.toLowerCase())).length === 0 && (
+            <div className="text-gray-400 text-sm py-6 text-center">{priceMemSearch ? "No results." : "No prices remembered yet."}</div>
+          )}
           <div className="space-y-1.5">
-            {priceMemory.map(ip => (
+            {priceMemory.filter(ip => !priceMemSearch.trim() || ip.item_name.toLowerCase().includes(priceMemSearch.toLowerCase())).map(ip => (
               <div key={ip.id} data-testid={`price-memory-${ip.id}`} className="bg-white border rounded p-2 flex justify-between items-center text-sm">
                 <span className="font-medium text-gray-700">{ip.item_name}</span>
                 <span className="text-gray-600">{fmtAmt(ip.price)}</span>
@@ -443,10 +498,19 @@ export default function CustomerDetail() {
       {/* Settled Tab */}
       {tab === "settled" && (
         <div data-testid="settled-section">
-          <div className="text-sm text-gray-500 mb-3">Settled pages (history only, not counted in balance).</div>
-          {settledPages.length === 0 && <div className="text-gray-400 text-sm py-6 text-center">No settled pages.</div>}
+          <div className="text-sm text-gray-500 mb-2">Settled pages (history only, not counted in balance).</div>
+          <input
+            data-testid="settled-search"
+            className="border rounded px-3 py-1.5 text-sm w-full mb-3 bg-white"
+            placeholder="Search by date..."
+            value={settledSearch}
+            onChange={e => setSettledSearch(e.target.value)}
+          />
+          {settledPages.filter(p => !settledSearch.trim() || fmtDate(p.date).toLowerCase().includes(settledSearch.toLowerCase()) || p.date.includes(settledSearch)).length === 0 && (
+            <div className="text-gray-400 text-sm py-6 text-center">{settledSearch ? "No results." : "No settled pages."}</div>
+          )}
           <div className="space-y-1.5">
-            {settledPages.map(p => (
+            {settledPages.filter(p => !settledSearch.trim() || fmtDate(p.date).toLowerCase().includes(settledSearch.toLowerCase()) || p.date.includes(settledSearch)).map(p => (
               <div key={p.id} data-testid={`settled-page-${p.id}`} className="bg-white border rounded p-2.5 flex items-center gap-2">
                 <div
                   className="flex-1 cursor-pointer"
