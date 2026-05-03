@@ -174,10 +174,7 @@ async def update_customer(cid: str, data: CustomerUpdate):
 async def delete_customer(cid: str):
     async for p in db.pages.find({"customer_id": cid}, {"_id": 1, "images": 1}):
         pid = str(p["_id"])
-        for img in p.get("images", []):
-            fp = UPLOAD_DIR / img
-            if fp.exists():
-                fp.unlink()
+        cleanup_page_images(p.get("images", []))
         await db.entries.delete_many({"page_id": pid})
     await db.pages.delete_many({"customer_id": cid})
     await db.item_prices.delete_many({"customer_id": cid})
@@ -241,10 +238,7 @@ async def update_page(pid: str, data: PageUpdate):
 async def delete_page(pid: str):
     p = await db.pages.find_one({"_id": ObjectId(pid)}, {"images": 1})
     if p:
-        for img in p.get("images", []):
-            fp = UPLOAD_DIR / img
-            if fp.exists():
-                fp.unlink()
+        cleanup_page_images(p.get("images", []))
     await db.entries.delete_many({"page_id": pid})
     await db.pages.delete_one({"_id": ObjectId(pid)})
     return {"success": True}
