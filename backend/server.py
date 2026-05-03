@@ -1,4 +1,5 @@
-from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Request
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -499,3 +500,14 @@ async def get_summary(cid: str):
 
 app.mount("/api/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 app.include_router(api_router)
+
+# ── Serve React build in production (when /app/backend/static/ exists) ──
+BUILD_DIR = ROOT_DIR / "static"
+if BUILD_DIR.exists():
+    react_assets = BUILD_DIR / "static"
+    if react_assets.exists():
+        app.mount("/static", StaticFiles(directory=str(react_assets)), name="react-assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(request: Request, full_path: str):
+        return FileResponse(str(BUILD_DIR / "index.html"))
