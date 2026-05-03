@@ -1,0 +1,74 @@
+{
+  "theme": "Light",
+  "archetype": "Organic & Earthy (Traditional Indian Bahi-Khata)",
+  "color_palette": {
+    "primary": "#9E2A2B",
+    "primary_hover": "#7A2021",
+    "background_base": "#F8F5E6",
+    "background_paper": "#FDFBF7",
+    "text_primary": "#2C2825",
+    "text_secondary": "#5C544D",
+    "border_subtle": "#E5E0D8",
+    "border_margin": "#E3A8A8",
+    "accent_received": "#2D6A4F",
+    "accent_given": "#9E2A2B",
+    "accent_pending": "#B08D57"
+  },
+  "typography": {
+    "headings": "Merriweather",
+    "body": "Work Sans",
+    "rules": {
+      "h1": "text-3xl sm:text-4xl tracking-tight text-[#9E2A2B] font-serif",
+      "h2": "text-2xl sm:text-3xl font-serif text-[#2C2825]",
+      "h3": "text-xl sm:text-2xl font-serif text-[#5C544D]",
+      "body_text": "text-base sm:text-lg text-[#2C2825] font-sans"
+    }
+  },
+  "layout_spacing": {
+    "container_padding": "p-4 sm:p-6 md:p-8",
+    "paper_shadow": "shadow-[0_4px_14px_rgba(0,0,0,0.05)]",
+    "border_radius": "rounded-sm",
+    "gap_standard": "gap-4 sm:gap-6"
+  },
+  "components_strategy": {
+    "app_container": "bg-[#F8F5E6] min-h-screen text-[#2C2825] font-sans selection:bg-[#9E2A2B] selection:text-white",
+    "header": "bg-[#9E2A2B] text-[#FDFBF7] p-4 flex items-center justify-between sticky top-0 z-50 shadow-md",
+    "hisab_page": "bg-[#FDFBF7] border border-[#E5E0D8] rounded-sm shadow-md overflow-hidden relative min-h-[60vh] mt-6 mx-auto max-w-5xl",
+    "hisab_margin_line": "absolute left-12 top-0 bottom-0 w-px bg-[#E3A8A8] z-0 hidden sm:block",
+    "hisab_ruled_lines": "bg-[linear-gradient(transparent_95%,_#E5E0D8_100%)] bg-[length:100%_3rem] absolute inset-0 z-0 opacity-50",
+    "entry_row": "relative z-10 flex flex-col sm:flex-row gap-4 px-4 py-2 sm:py-0 border-b border-[#E5E0D8] sm:border-none sm:h-[3rem] items-start sm:items-center text-lg",
+    "button_primary": "bg-[#9E2A2B] text-white px-6 py-2 rounded-sm hover:bg-[#7A2021] transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-[#9E2A2B] focus:ring-offset-[#FDFBF7]",
+    "button_secondary": "bg-[#FDFBF7] text-[#5C544D] border border-[#D6CDC4] px-4 py-2 rounded-sm hover:bg-[#F8F5E6] transition-colors",
+    "input_field": "bg-transparent border-b border-dashed border-[#A8A098] focus:border-solid focus:border-[#9E2A2B] outline-none px-1 py-1 placeholder:text-[#A8A098] text-[#2C2825]",
+    "sidebar_panel": "bg-[#FDFBF7] border-l border-[#E5E0D8] shadow-sm p-4 h-full"
+  },
+  "accessibility_and_testing": {
+    "focus_states": "All interactive elements must have visible focus rings using focus:ring-2 focus:ring-[#9E2A2B] focus:ring-offset-2 focus:ring-offset-[#FDFBF7].",
+    "data_testid_rules": "Every button, input, list item, and interactive icon MUST have a data-testid attribute in kebab-case (e.g., data-testid='add-entry-button', data-testid='customer-list-item')."
+  },
+  "image_urls": {
+    "auth_background": {
+      "url": "https://images.unsplash.com/photo-1760307837850-13db8b0d94cb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHwyfHxvbGQlMjBsZWRnZXIlMjBib29rfGVufDB8fHx8MTc3NzgwODYyNXww&ixlib=rb-4.1.0&q=85",
+      "description": "Old vintage handwritten ledger book",
+      "placement": "Left or right half of the auth screen to establish the traditional feel"
+    },
+    "paper_texture": {
+      "url": "https://images.unsplash.com/photo-1755540735819-107733f0be49?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwxfHxvbGQlMjB2aW50YWdlJTIwcGFwZXIlMjB0ZXh0dXJlJTIwYmxhbmt8ZW58MHx8fHwxNzc3ODA4NjA0fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Subtle old paper texture",
+      "placement": "Use as a very low opacity (5-10%) background overlay or blend mode on the main app wrapper"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Install and use Phosphor Icons (@phosphor-icons/react) for traditional, slightly rounded, thick line icons.",
+    "Do NOT use standard modern SaaS cards with heavy shadows or rounded corners for the main Hisab interface. It must look like a physical piece of paper (Hisab Book Page).",
+    "Implement horizontal ruled lines using CSS background linear-gradient on the paper component to mimic physical ledger pages.",
+    "Add a subtle vertical red margin line on the left side of the paper using absolute positioning. The content should be padded to sit to the right of this line.",
+    "Use Shadcn UI for complex interactives (Dialog, Popover, Select, Command/Autocomplete), but strip away the default Vercel-like border-radius (use rounded-sm) and styling. Force them to inherit the cream paper background and ink text.",
+    "Make entry forms feel like filling out blanks on a paper line, using dashed bottom borders instead of full bounding boxes where possible.",
+    "Data test IDs are strictly required for ALL actionable elements.",
+    "For the '5 entry types', color-code the amounts to resemble different inks: Money Received (Green ink), Money Given (Red ink), Pending/Bill (Blue/Black ink).",
+    "The Pending Prices and Item Price Memory sections should feel like index cards or sticky notes attached to the main ledger, using slight rotations or layered shadows.",
+    "Image attachments per page should be displayed as small photo thumbnails 'clipped' or 'pinned' to the digital paper.",
+    "Ensure all text remains high contrast against the paper-like background."
+  ]
+}
