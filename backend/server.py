@@ -59,7 +59,19 @@ def oid(doc):
     return doc
 
 
-@app.on_event("startup")
+def cleanup_page_images(images: list):
+    """Delete images from Cloudinary or local filesystem."""
+    for img in images:
+        if isinstance(img, dict):
+            try:
+                if img.get("public_id"):
+                    cloudinary.uploader.destroy(img["public_id"], invalidate=True)
+            except Exception as e:
+                logger.error(f"Cloudinary delete error during cleanup: {e}")
+        elif isinstance(img, str):
+            fp = UPLOAD_DIR / img
+            if fp.exists():
+                fp.unlink()
 async def create_indexes():
     await db.entries.create_index([("page_id", 1)])
     await db.entries.create_index([("customer_id", 1), ("type", 1)])
