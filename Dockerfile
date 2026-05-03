@@ -1,5 +1,5 @@
 # ── Stage 1: Build React frontend ─────────────────────────────
-FROM node:18-alpine AS frontend
+FROM node:20-alpine AS frontend
 WORKDIR /frontend
 COPY frontend/package.json frontend/yarn.lock* ./
 RUN yarn install
