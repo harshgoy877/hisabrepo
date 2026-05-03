@@ -41,6 +41,7 @@ function AutoInput({ value, onChange, suggestions, priceMap, onSelect, ...rest }
 // ── Single entry display + edit ──────────────────────────────
 function EntryRow({ entry, onDelete, onUpdate }) {
   const [editing, setEditing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [val, setVal] = useState({});
 
   function startEdit() {
@@ -179,11 +180,25 @@ function EntryRow({ entry, onDelete, onUpdate }) {
               onClick={startEdit}
               className="text-xs border px-2 py-0.5 rounded text-gray-500 hover:bg-gray-50"
             >Edit</button>
-            <button
-              data-testid={`delete-entry-${entry.id}`}
-              onClick={() => onDelete(entry.id)}
-              className="text-xs border px-2 py-0.5 rounded text-red-500 hover:bg-red-50"
-            >Del</button>
+            {confirming ? (
+              <>
+                <button
+                  data-testid={`confirm-delete-entry-${entry.id}`}
+                  onClick={() => { onDelete(entry.id); setConfirming(false); }}
+                  className="text-xs border px-2 py-0.5 rounded bg-red-500 text-white"
+                >Sure?</button>
+                <button
+                  onClick={() => setConfirming(false)}
+                  className="text-xs border px-2 py-0.5 rounded text-gray-500"
+                >No</button>
+              </>
+            ) : (
+              <button
+                data-testid={`delete-entry-${entry.id}`}
+                onClick={() => setConfirming(true)}
+                className="text-xs border px-2 py-0.5 rounded text-red-500 hover:bg-red-50"
+              >Del</button>
+            )}
           </div>
         </div>
       )}
@@ -365,7 +380,6 @@ export default function PageDetail() {
   }
 
   async function deleteEntry(eid) {
-    if (!window.confirm("Delete this entry?")) return;
     await api.delete(`/entries/${eid}`);
     load();
   }
@@ -407,7 +421,6 @@ export default function PageDetail() {
   }
 
   async function deleteImage(img) {
-    if (!window.confirm("Delete this image?")) return;
     if (typeof img === "object" && img !== null) {
       await api.post(`/pages/${pid}/images/delete`, { public_id: img.public_id, url: img.url });
     } else {

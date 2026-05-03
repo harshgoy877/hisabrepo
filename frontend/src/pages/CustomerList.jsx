@@ -14,6 +14,7 @@ export default function CustomerList() {
   const [editPhone, setEditPhone] = useState("");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -45,9 +46,9 @@ export default function CustomerList() {
     load();
   }
 
-  async function deleteCustomer(id, nm) {
-    if (!window.confirm(`Delete "${nm}" and all their hisab? Cannot be undone.`)) return;
+  async function deleteCustomer(id) {
     await api.delete(`/customers/${id}`);
+    setPendingDelete(null);
     load();
   }
 
@@ -164,11 +165,25 @@ export default function CustomerList() {
                     onClick={() => { setEditId(c.id); setEditName(c.name); setEditPhone(c.phone || ""); }}
                     className="text-xs border px-2 py-1 rounded text-gray-600 hover:bg-gray-50"
                   >Edit</button>
-                  <button
-                    data-testid={`delete-customer-${c.id}`}
-                    onClick={() => deleteCustomer(c.id, c.name)}
-                    className="text-xs border px-2 py-1 rounded text-red-500 hover:bg-red-50"
-                  >Delete</button>
+                  {pendingDelete === c.id ? (
+                    <>
+                      <button
+                        data-testid={`confirm-delete-${c.id}`}
+                        onClick={() => deleteCustomer(c.id)}
+                        className="text-xs border px-2 py-1 rounded bg-red-500 text-white"
+                      >Sure?</button>
+                      <button
+                        onClick={() => setPendingDelete(null)}
+                        className="text-xs border px-2 py-1 rounded text-gray-500"
+                      >No</button>
+                    </>
+                  ) : (
+                    <button
+                      data-testid={`delete-customer-${c.id}`}
+                      onClick={() => setPendingDelete(c.id)}
+                      className="text-xs border px-2 py-1 rounded text-red-500 hover:bg-red-50"
+                    >Delete</button>
+                  )}
                 </div>
               </div>
             )}

@@ -36,6 +36,7 @@ export default function CustomerDetail() {
   const [pendingPriceSearch, setPendingPriceSearch] = useState("");
   const [priceMemSearch, setPriceMemSearch] = useState("");
   const [settledSearch, setSettledSearch] = useState("");
+  const [pendingDeletePage, setPendingDeletePage] = useState(null);
 
   const LIMIT = 20;
 
@@ -104,8 +105,8 @@ export default function CustomerDetail() {
   }
 
   async function deletePage(pid) {
-    if (!window.confirm("Delete this page and all its entries?")) return;
     await api.delete(`/pages/${pid}`);
+    setPendingDeletePage(null);
     loadPages(1);
     loadCustomer();
   }
@@ -120,7 +121,6 @@ export default function CustomerDetail() {
 
   async function settleSelected() {
     if (!selected.size) return;
-    if (!window.confirm(`Settle ${selected.size} page(s)? They will move to Settled history.`)) return;
     await api.post("/pages/settle", { page_ids: Array.from(selected) });
     setSelected(new Set());
     loadPages(1);
@@ -268,11 +268,25 @@ export default function CustomerDetail() {
                     <span className="ml-2 text-xs text-gray-400">{p.images.length} image{p.images.length > 1 ? "s" : ""}</span>
                   )}
                 </div>
-                <button
-                  data-testid={`delete-page-${p.id}`}
-                  onClick={() => deletePage(p.id)}
-                  className="text-xs text-red-500 border px-2 py-0.5 rounded hover:bg-red-50"
-                >Delete</button>
+                {pendingDeletePage === p.id ? (
+                  <>
+                    <button
+                      data-testid={`confirm-delete-page-${p.id}`}
+                      onClick={() => deletePage(p.id)}
+                      className="text-xs border px-2 py-0.5 rounded bg-red-500 text-white"
+                    >Sure?</button>
+                    <button
+                      onClick={() => setPendingDeletePage(null)}
+                      className="text-xs border px-2 py-0.5 rounded text-gray-500"
+                    >No</button>
+                  </>
+                ) : (
+                  <button
+                    data-testid={`delete-page-${p.id}`}
+                    onClick={() => setPendingDeletePage(p.id)}
+                    className="text-xs text-red-500 border px-2 py-0.5 rounded hover:bg-red-50"
+                  >Delete</button>
+                )}
               </div>
             ))}
           </div>
