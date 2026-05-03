@@ -9,6 +9,10 @@ import os
 import uuid
 import shutil
 import logging
+import time
+import cloudinary
+import cloudinary.uploader
+import cloudinary.utils
 from pathlib import Path
 from pydantic import BaseModel
 from typing import Optional
@@ -24,6 +28,14 @@ db = client[DB_NAME]
 
 UPLOAD_DIR = ROOT_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
+
+# Cloudinary config
+cloudinary.config(
+    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.environ.get("CLOUDINARY_API_KEY"),
+    api_secret=os.environ.get("CLOUDINARY_API_SECRET"),
+    secure=True,
+)
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -494,6 +506,51 @@ async def get_summary(cid: str):
 
     bal = await get_balance(cid)
     return {"bills": bills, "items": items, "money_in": money_in, "money_out": money_out, **bal}
+
+
+# ────────── CLOUDINARY ──────────
+
+@api_router.get("/cloudinary/signature")
+async def cloudinary_signature():
+    timestamp = int(time.time())
+    folder = "hisab"
+    params = {"timestamp": timestamp, "folder": folder}
+    signature = cloudinary.utils.api_sign_request(params, os.environ.get("CLOUDINARY_API_SECRET"))
+    return {
+        "signature": signature,
+        "timestamp": timestamp,
+        "cloud_name": os.environ.get("CLOUDINARY_CLOUD_NAME"),
+        "api_key": os.environ.get("CLOUDINARY_API_KEY"),
+        "folder": folder,
+    }
+
+
+class CloudinaryImageSave(BaseModel):
+    url: str
+    public_id: str
+
+
+@api_router.post("/pages/{pid}/images/save")
+async def save_cloudinary_image(pid: str, data: CloudinaryImageSave):
+    await db.pages.update_one(
+        {"_id": ObjectId(pid)},
+        {"$push": {"images": {"url": data.url, "public_id": data.public_id}}},
+    )
+    return {"success": True}
+
+
+@api_router.post("/pages/{pid}/images/delete")
+async def delete_cloudinary_image(pid: str, data: dict):
+    public_id = data.get("public_id")
+    url = data.get("url")
+    if public_id:
+        try:
+            cloudinary.uploader.destroy(public_id, invalidate=True)
+        except Exception as e:
+            logger.error(f"Cloudinary delete error: {e}")
+    pull_filter = {"url": url} if url else {"public_id": public_id}
+    await db.pages.update_one({"_id": ObjectId(pid)}, {"$pull": {"images": pull_filter}})
+    return {"success": True}
 
 
 # ────────── MOUNT & INCLUDE ──────────

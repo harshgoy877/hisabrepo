@@ -373,16 +373,46 @@ export default function PageDetail() {
   async function uploadImage(e) {
     const file = e.target.files[0];
     if (!file) return;
-    const fd = new FormData();
-    fd.append("file", file);
-    await api.post(`/pages/${pid}/images`, fd, { headers: { "Content-Type": "multipart/form-data" } });
-    load();
+    try {
+      // 1. Get signature from backend
+      const sigRes = await api.get("/cloudinary/signature");
+      const sig = sigRes.data;
+
+      // 2. Upload directly to Cloudinary
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("api_key", sig.api_key);
+      fd.append("timestamp", sig.timestamp);
+      fd.append("signature", sig.signature);
+      fd.append("folder", sig.folder);
+
+      const cloudRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${sig.cloud_name}/image/upload`,
+        { method: "POST", body: fd }
+      );
+      const cloudData = await cloudRes.json();
+      if (!cloudData.secure_url) throw new Error("Upload failed");
+
+      // 3. Save URL to backend
+      await api.post(`/pages/${pid}/images/save`, {
+        url: cloudData.secure_url,
+        public_id: cloudData.public_id,
+      });
+      load();
+    } catch (err) {
+      console.error("Image upload failed:", err);
+      alert("Image upload failed. Please try again.");
+    }
     e.target.value = "";
   }
 
-  async function deleteImage(filename) {
+  async function deleteImage(img) {
     if (!window.confirm("Delete this image?")) return;
-    await api.delete(`/pages/${pid}/images/${filename}`);
+    if (typeof img === "object" && img !== null) {
+      await api.post(`/pages/${pid}/images/delete`, { public_id: img.public_id, url: img.url });
+    } else {
+      await api.delete(`/pages/${pid}/images/${img}`);
+    }
     load();
   }
 
@@ -433,23 +463,28 @@ export default function PageDetail() {
         </div>
         {page.images && page.images.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {page.images.map(img => (
-              <div key={img} className="relative group">
-                <a href={`${BACKEND}/api/uploads/${img}`} target="_blank" rel="noreferrer">
-                  <img
-                    data-testid={`image-${img}`}
-                    src={`${BACKEND}/api/uploads/${img}`}
-                    alt=""
-                    className="w-20 h-20 object-cover rounded border"
-                  />
-                </a>
-                <button
-                  data-testid={`delete-image-${img}`}
-                  onClick={() => deleteImage(img)}
-                  className="absolute top-0.5 right-0.5 bg-red-500 text-white text-xs w-5 h-5 rounded-full items-center justify-center hidden group-hover:flex"
-                >✕</button>
-              </div>
-            ))}
+            {page.images.map((img, idx) => {
+              const isObj = typeof img === "object" && img !== null;
+              const src = isObj ? img.url : `${BACKEND}/api/uploads/${img}`;
+              const key = isObj ? img.public_id : img;
+              return (
+                <div key={key || idx} className="relative group">
+                  <a href={src} target="_blank" rel="noreferrer">
+                    <img
+                      data-testid={`image-${key}`}
+                      src={src}
+                      alt=""
+                      className="w-20 h-20 object-cover rounded border"
+                    />
+                  </a>
+                  <button
+                    data-testid={`delete-image-${key}`}
+                    onClick={() => deleteImage(img)}
+                    className="absolute top-0.5 right-0.5 bg-red-500 text-white text-xs w-5 h-5 rounded-full items-center justify-center hidden group-hover:flex"
+                  >✕</button>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="text-xs text-gray-400">No images</div>
