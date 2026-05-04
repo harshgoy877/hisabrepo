@@ -138,6 +138,42 @@ class CustomerUpdate(BaseModel):
     phone: Optional[str] = None
 
 
+@api_router.get("/customers/{cid}/single")
+async def get_single_customer(cid: str):
+    c = await db.customers.find_one({"_id": ObjectId(cid)}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Customer not found")
+    c["id"] = cid
+    bal = await get_balance(cid)
+    c.update(bal)
+    return c
+
+
+@api_router.get("/all-pages")
+async def list_all_pages(page: int = 1, limit: int = 50):
+    skip = (page - 1) * limit
+    pipeline = [
+        {"$match": {"is_settled": False}},
+        {"$sort": {"date": -1, "created_at": -1}},
+        {"$skip": skip},
+        {"$limit": limit},
+        {"$addFields": {"cust_oid": {"$toObjectId": "$customer_id"}}},
+        {"$lookup": {
+            "from": "customers",
+            "localField": "cust_oid",
+            "foreignField": "_id",
+            "as": "cust_arr",
+        }},
+        {"$addFields": {"customer_name": {"$arrayElemAt": ["$cust_arr.name", 0]}}},
+        {"$project": {"cust_arr": 0, "cust_oid": 0}},
+    ]
+    result = []
+    async for p in db.pages.aggregate(pipeline):
+        result.append(oid(p))
+    total = await db.pages.count_documents({"is_settled": False})
+    return {"pages": result, "total": total, "page": page, "limit": limit}
+
+
 @api_router.get("/customers")
 async def list_customers():
     result = []

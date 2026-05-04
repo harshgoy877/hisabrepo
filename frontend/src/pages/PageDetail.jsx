@@ -71,9 +71,8 @@ function EntryRow({ entry, onDelete, onUpdate }) {
       delete payload.amount;
       if (val.note) payload.note = val.note;
     }
-    await api.put(`/entries/${entry.id}`, payload);
     setEditing(false);
-    onUpdate();
+    onUpdate(payload);
   }
 
   const label = () => {
@@ -236,9 +235,9 @@ function AddEntryForm({ pid, onAdded, suggestions, priceMap }) {
       if (!note.trim()) return;
       payload.note = note.trim();
     }
-    await api.post(`/pages/${pid}/entries`, payload);
+    const res = await api.post(`/pages/${pid}/entries`, payload);
     reset();
-    onAdded();
+    onAdded(res.data);
   }
 
   const btnCls = (t) =>
@@ -369,8 +368,6 @@ export default function PageDetail() {
   useEffect(() => {
     load();
     loadSuggestions();
-    const t = setInterval(load, 5000);
-    return () => clearInterval(t);
   }, [load, loadSuggestions]);
 
   async function saveDate() {
@@ -380,8 +377,12 @@ export default function PageDetail() {
   }
 
   async function deleteEntry(eid) {
-    await api.delete(`/entries/${eid}`);
-    load();
+    setEntries(prev => prev.filter(e => e.id !== eid));
+    try {
+      await api.delete(`/entries/${eid}`);
+    } catch {
+      load();
+    }
   }
 
   async function uploadImage(e) {
@@ -529,11 +530,14 @@ export default function PageDetail() {
               e.type.includes(q)
             );
           }).map(e => (
-            <EntryRow
+          <EntryRow
               key={e.id}
               entry={e}
               onDelete={deleteEntry}
-              onUpdate={() => { load(); loadSuggestions(); }}
+              onUpdate={(payload) => {
+                setEntries(prev => prev.map(en => en.id === e.id ? { ...en, ...payload } : en));
+                api.put(`/entries/${e.id}`, payload).then(() => loadSuggestions()).catch(() => load());
+              }}
             />
           ))}
         </div>
@@ -542,7 +546,11 @@ export default function PageDetail() {
       {/* Add Entry Form */}
       <AddEntryForm
         pid={pid}
-        onAdded={() => { load(); loadSuggestions(); }}
+        onAdded={(newEntry) => {
+          if (newEntry) setEntries(prev => [...prev, newEntry]);
+          else load();
+          loadSuggestions();
+        }}
         suggestions={suggestions}
         priceMap={priceMap}
       />
