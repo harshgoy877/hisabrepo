@@ -30,11 +30,20 @@ Build a traditional Indian hisab (ledger) maintaining software with:
 - 5 entry types with auto bill numbering
 - Page creation, settling, unsettling
 - Image upload via Cloudinary (client-side signed upload)
-- Cloudinary image deletion on page/customer delete (fixed 2025-01-xx)
+- Cloudinary image deletion on page/customer delete (fixed Jan 2026)
 - Pending bills & pending prices tabs
 - Item price memory & autocomplete
 - Search/filter across all tabs
 - Docker single-container deployment (serves React via FastAPI StaticFiles)
+- MongoDB indexes created on startup
+
+### Performance & UX (Feb 2026)
+- **Optimistic UI updates**: All mutations (add/delete customer, page, entry) update UI instantly without waiting for backend
+- **Inline page expansion**: Pages expand in-place on CustomerDetail showing entries + quick-add form — no navigation to PageDetail needed
+- **Auto-expand most recent page**: First page auto-expanded when opening a customer
+- **All Pages tab**: Home screen shows date-sorted pages across all customers with expandable entry details
+- **Removed polling**: No more setInterval re-fetches; events drive state updates
+- **Minimum clicks**: Add a bill in 3 clicks (open customer → click Bill → submit)
 
 ## Completed Tasks (Chronological)
 - Initial full-stack setup
@@ -42,15 +51,22 @@ Build a traditional Indian hisab (ledger) maintaining software with:
 - Search bars and filtering
 - Cloudinary integration for permanent image storage
 - Docker multi-stage build (Node 20 fix)
-- Fixed customer/page deletion — Cloudinary `destroy()` now called via `cleanup_page_images()` helper (Jan 2026)
+- Fixed customer/page deletion — Cloudinary `destroy()` now called (Jan 2026)
+- Optimistic updates + inline entries + All Pages view (Feb 2026)
+
+## Key API Endpoints
+- `GET/POST/DELETE /api/customers`
+- `GET /api/customers/{cid}/single` — single customer with balance
+- `GET/POST/DELETE /api/customers/{cid}/pages`
+- `POST/PUT/DELETE /api/entries`
+- `PATCH /api/entries/{eid}/fill`
+- `GET /api/all-pages` — all pages across customers with customer_name
+- `GET /api/cloudinary/signature`
 
 ## Prioritized Backlog
-### P1
-- None currently
-
 ### P2
 - Print/export customer summary as PDF
 
 ### P3 (Future)
-- Split `server.py` into modular `routers/` directory
+- Split `server.py` into modular `routers/` directory (613 lines, approaching threshold)
 - Authentication (if multi-user needed in future)

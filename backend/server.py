@@ -79,6 +79,11 @@ async def create_indexes():
     await db.item_prices.create_index([("customer_id", 1), ("item_name", 1)], unique=True)
 
 
+@app.on_event("startup")
+async def startup():
+    await create_indexes()
+
+
 @app.on_event("shutdown")
 async def shutdown():
     client.close()
