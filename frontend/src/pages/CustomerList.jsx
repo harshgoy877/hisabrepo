@@ -2,14 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { fmtAmt, fmtDate } from "../utils/fmt";
+import { useApp } from "../utils/AppContext";
 
 export default function CustomerList() {
   const nav = useNavigate();
-  const [tab, setTab] = useState("customers");
+  const { customers, setCustomers, refreshCustomers } = useApp();
+  const custLoaded = customers !== null;
 
-  // ---- Customers state ----
-  const [customers, setCustomers] = useState([]);
-  const [custLoaded, setCustLoaded] = useState(false);
+  const [tab, setTab] = useState("customers");
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -29,12 +29,6 @@ export default function CustomerList() {
   const [loadingAllPageEntries, setLoadingAllPageEntries] = useState(new Set());
   const [allPagesSearch, setAllPagesSearch] = useState("");
 
-  const loadCustomers = useCallback(async () => {
-    const r = await api.get("/customers");
-    setCustomers(r.data);
-    setCustLoaded(true);
-  }, []);
-
   const loadAllPages = useCallback(async (pg = 1) => {
     const r = await api.get("/all-pages", { params: { page: pg, limit: 50 } });
     if (pg === 1) setAllPages(r.data.pages);
@@ -43,8 +37,6 @@ export default function CustomerList() {
     setAllPagesPage(pg);
     setAllPagesLoaded(true);
   }, []);
-
-  useEffect(() => { loadCustomers(); }, [loadCustomers]);
 
   useEffect(() => {
     if (tab === "all-pages" && !allPagesLoaded) loadAllPages(1);

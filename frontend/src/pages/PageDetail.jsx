@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../utils/api";
 import { fmtAmt, fmtDate, today } from "../utils/fmt";
+import { useApp } from "../utils/AppContext";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
@@ -336,8 +337,11 @@ function AddEntryForm({ pid, onAdded, suggestions, priceMap }) {
 export default function PageDetail() {
   const { cid, pid } = useParams();
   const nav = useNavigate();
+  const { pageEntriesMap, setPageEntriesMap } = useApp();
+
   const [page, setPage] = useState(null);
-  const [entries, setEntries] = useState([]);
+  // Initialize entries from cache immediately (no loading if visited via CustomerDetail)
+  const [entries, setEntries] = useState(() => pageEntriesMap[pid] || []);
   const [suggestions, setSuggestions] = useState([]);
   const [priceMap, setPriceMap] = useState({});
   const [editDate, setEditDate] = useState(false);
@@ -352,7 +356,8 @@ export default function PageDetail() {
     ]);
     setPage(pRes.data);
     setEntries(eRes.data);
-  }, [pid]);
+    setPageEntriesMap(prev => ({ ...prev, [pid]: eRes.data }));
+  }, [pid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadSuggestions = useCallback(async () => {
     const [namesRes, pricesRes] = await Promise.all([
@@ -377,7 +382,9 @@ export default function PageDetail() {
   }
 
   async function deleteEntry(eid) {
-    setEntries(prev => prev.filter(e => e.id !== eid));
+    const newEntries = entries.filter(e => e.id !== eid);
+    setEntries(newEntries);
+    setPageEntriesMap(prev => ({ ...prev, [pid]: newEntries }));
     try {
       await api.delete(`/entries/${eid}`);
     } catch {
@@ -535,7 +542,9 @@ export default function PageDetail() {
               entry={e}
               onDelete={deleteEntry}
               onUpdate={(payload) => {
-                setEntries(prev => prev.map(en => en.id === e.id ? { ...en, ...payload } : en));
+                const newEntries = entries.map(en => en.id === e.id ? { ...en, ...payload } : en);
+                setEntries(newEntries);
+                setPageEntriesMap(prev => ({ ...prev, [pid]: newEntries }));
                 api.put(`/entries/${e.id}`, payload).then(() => loadSuggestions()).catch(() => load());
               }}
             />
@@ -547,8 +556,11 @@ export default function PageDetail() {
       <AddEntryForm
         pid={pid}
         onAdded={(newEntry) => {
-          if (newEntry) setEntries(prev => [...prev, newEntry]);
-          else load();
+          if (newEntry) {
+            const newEntries = [...entries, newEntry];
+            setEntries(newEntries);
+            setPageEntriesMap(prev => ({ ...prev, [pid]: newEntries }));
+          } else load();
           loadSuggestions();
         }}
         suggestions={suggestions}
