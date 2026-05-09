@@ -4,7 +4,8 @@ WORKDIR /frontend
 COPY frontend/package.json frontend/yarn.lock* ./
 RUN yarn install
 COPY frontend/ .
-ENV REACT_APP_BACKEND_URL=""
+ARG REACT_APP_BACKEND_URL=""
+ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
 RUN yarn build
 
 # ── Stage 2: Run FastAPI backend ───────────────────────────────
