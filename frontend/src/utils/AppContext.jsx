@@ -21,10 +21,11 @@ export function AppProvider({ children }) {
   const refreshCustomers = useCallback(async () => {
     try {
       const r = await api.get("/customers");
-      setCustomers(r.data);
+      const data = Array.isArray(r.data) ? r.data : [];
+      setCustomers(data);
       setCustomerMap(prev => {
         const next = { ...prev };
-        r.data.forEach(c => { next[c.id] = c; });
+        data.forEach(c => { next[c.id] = c; });
         return next;
       });
     } catch {}
