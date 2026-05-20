@@ -1,17 +1,15 @@
 steps:
-  # Step 1: Build the Docker image
+  # Step 1: Build Docker image
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - build
-      - --build-arg
-      - REACT_APP_BACKEND_URL=${_REACT_APP_BACKEND_URL:-""} # Safely handles empty string or substitution
       - -t
       - gcr.io/$PROJECT_ID/hisab-book:$COMMIT_SHA
       - -t
       - gcr.io/$PROJECT_ID/hisab-book:latest
       - .
 
-  # Step 2: Push image to Container Registry
+  # Step 2: Push to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: [push, 'gcr.io/$PROJECT_ID/hisab-book:$COMMIT_SHA']
 
@@ -37,6 +35,5 @@ images:
   - gcr.io/$PROJECT_ID/hisab-book:$COMMIT_SHA
   - gcr.io/$PROJECT_ID/hisab-book:latest
 
-# Fixes the build.service_account log bucket error:
 options:
   logging: CLOUD_LOGGING_ONLY
